@@ -4,7 +4,7 @@ in my humble opinion, these style of captions used for attracting the viewer's a
 
 ## setup
 
-clone the entire github project and make sure to have `bun` installed
+clone the entire github project and make sure to have `bun` and `ffmpeg` installed on your system
 
 you're gonna have to run the server in your terminal before you open the software
 
