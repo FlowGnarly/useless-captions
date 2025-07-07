@@ -13,8 +13,10 @@ you're gonna have to run the server in your terminal before you open the softwar
 git clone https://github.com/flowgnarly/useless-captions
 cd useless-captions
 
-# install all the dependencies and run this script (the server won't be able to render the video if you miss this step)
+# install all the dependencies
 bun i
+
+run this script (make sure to run it again when the ./remotion/ directory get's updated)
 bun bundleRemotion.ts
 
 # cd into the server, install server dependencies
