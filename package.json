@@ -1,0 +1,41 @@
+{
+  "name": "useless-captions",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "bun bundleRemotion.ts && tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
+    "@remotion/bundler": "^4.0.322",
+    "@remotion/captions": "^4.0.321",
+    "@remotion/media-parser": "^4.0.321",
+    "@remotion/player": "^4.0.322",
+    "@remotion/webcodecs": "^4.0.321",
+    "@remotion/whisper-web": "^4.0.322",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "~2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@uiw/color-convert": "^2.6.0",
+    "@uiw/react-color-shade-slider": "^2.6.0",
+    "@uiw/react-color-wheel": "^2.6.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.322"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3",
+    "@tauri-apps/cli": "^2"
+  }
+}
