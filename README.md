@@ -1,6 +1,6 @@
 # useless-captions
 
-in my humble opinion, these style of captions used for attracting the viewer's attention rather than helping them, hence the name useless-captions.
+in my humble opinion, these style of captions are used for attracting the viewer's attention rather than helping them, hence the name useless-captions.
 
 ## setup
 
@@ -33,7 +33,7 @@ now that the server is running, you can download the software if you haven't alr
 
 if the server failed to extract the whisper.cpp zip file (found in `./server/`) after downloading it, extract its content manually into `./server/whisper.cpp/` and run the server again
 
-if the server failed to download chrome-headless-shell, copy the download link from the logs and download it manually with a browser, once it finished download you can extract it into `./server/node_modules/.remotion/chrome-headless-shell/[your-platform]/chrome-headless-shell-[your-platform]/`
+if the server failed to download chrome-headless-shell, copy the download link from the logs and download it manually with a browser, once it finished downloading you can extract it into `./server/node_modules/.remotion/chrome-headless-shell/[your-platform]/chrome-headless-shell-[your-platform]/`
 
 (replace `[your-platform]` with one of `mac-arm64`, `mac-x64, linux64`, `linux-arm64` or `win64`.)
 
