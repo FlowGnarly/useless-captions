@@ -6,6 +6,7 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  Checkbox,
   Divider,
   Paper,
   Slider,
@@ -21,7 +22,7 @@ import InputIcon from "@mui/icons-material/Input";
 import CaptionIcon from "@mui/icons-material/ClosedCaption";
 import EditIcon from "@mui/icons-material/Edit";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Caption } from "@remotion/captions";
 import { HsvaColor, hsvaToHex } from "@uiw/color-convert";
 
@@ -55,15 +56,29 @@ export default function Tweaks({
     v: 90,
     a: 1,
   });
-
   const [highlightColor, setHighlightColor] = useState<HsvaColor>({
     h: 214,
     s: 43,
     v: 90,
     a: 1,
   });
-
+  const [textOutline, setTextOutline] = useState(false);
   const [textY, setTextY] = useState<number>(0);
+
+  useEffect(() => {
+    let textShadowEffect = `0px 0px 50px ${hsvaToHex(
+      textColor
+    )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(textColor)}`;
+
+    if (textOutline) {
+      textShadowEffect = `-1px -1px 5px black, ${textShadowEffect}`;
+    }
+
+    onEditTextStyle({
+      textShadow: textShadowEffect,
+      color: hsvaToHex(textColor),
+    });
+  }, [textColor, textOutline]);
 
   async function selectVideo() {
     const selected = await open({
@@ -234,10 +249,6 @@ export default function Tweaks({
                 color={textColor}
                 onChange={(color) => {
                   setTextColor(color.hsva);
-                  onEditTextStyle({
-                    color: color.hex,
-                    textShadow: `0px 0px 50px ${color.hex},0px 0px 150px white,0px 0px 80px ${color.hex}`,
-                  });
                 }}
               />
               <ShadeSlider
@@ -245,12 +256,6 @@ export default function Tweaks({
                 onChange={(newShade) => {
                   const color = { ...textColor, ...newShade };
                   setTextColor(color);
-                  onEditTextStyle({
-                    color: hsvaToHex(color),
-                    textShadow: `0px 0px 50px ${hsvaToHex(
-                      color
-                    )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(color)}`,
-                  });
                 }}
               />
             </Paper>
@@ -295,6 +300,13 @@ export default function Tweaks({
             max={1000}
             sx={{
               width: "50%",
+            }}
+          />
+          <Checkbox
+            title="Outline"
+            value={textOutline}
+            onChange={(event) => {
+              setTextOutline(event.currentTarget.checked);
             }}
           />
         </Box>
