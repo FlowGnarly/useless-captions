@@ -1,6 +1,6 @@
 import { Box, SxProps, Theme } from "@mui/material";
 import VideoPlayer from "../VideoPlayer";
-import { VideoMetadata } from "../../remotion/src/Root";
+import { VideoMetadata } from "../../remotion/Root";
 import { TikTokPage } from "@remotion/captions";
 
 export interface VisualsProps {
