@@ -10,6 +10,7 @@ type StyleState = {
   color: HsvaColor;
   highlightColor: HsvaColor;
   textOutline: boolean;
+  textGlow: boolean;
   y: number;
   fontSize: number;
 };
@@ -18,6 +19,7 @@ type StyleDispatchAction =
   | { type: "SET_TEXT_COLOR"; payload: HsvaColor }
   | { type: "SET_HIGHLIGHT_COLOR"; payload: HsvaColor }
   | { type: "SET_TEXT_OUTLINE"; payload: boolean }
+  | { type: "SET_TEXT_GLOW"; payload: boolean }
   | { type: "SET_TEXT_Y"; payload: number }
   | { type: "SET_FONT_SIZE"; payload: number };
 
@@ -32,6 +34,8 @@ function styleReducer(
       return { ...state, highlightColor: action.payload };
     case "SET_TEXT_OUTLINE":
       return { ...state, textOutline: action.payload };
+    case "SET_TEXT_GLOW":
+      return { ...state, textGlow: action.payload };
     case "SET_TEXT_Y":
       return { ...state, y: action.payload };
     case "SET_FONT_SIZE":
@@ -47,21 +51,24 @@ export default function TextCustomization() {
   const [style, dispatchStyle] = useReducer(styleReducer, {
     color: { h: 214, s: 43, v: 90, a: 1 },
     highlightColor: { h: 214, s: 43, v: 90, a: 1 },
-    textOutline: false,
+    textOutline: true,
+    textGlow: true,
     y: 0,
     fontSize: 4,
   });
 
   useEffect(() => {
-    const shadowBase = `0px 0px 50px ${hsvaToHex(
-      style.color
-    )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(style.color)}`;
-    const textShadow = style.textOutline
-      ? `-1px -1px 5px black, ${shadowBase}`
-      : shadowBase;
+    const textShadow: (string | undefined)[] = [
+      style.textOutline ? "-1px -1px 5px black" : undefined,
+      style.textGlow
+        ? `0px 0px 50px ${hsvaToHex(
+            style.color
+          )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(style.color)}`
+        : undefined,
+    ];
 
     updateStyle({
-      textShadow,
+      textShadow: textShadow.filter((v) => v !== undefined).join(", "),
       color: hsvaToHex(style.color),
       "&[data-highlight]": {
         backgroundColor: hsvaToHex(style.highlightColor),
@@ -170,6 +177,16 @@ export default function TextCustomization() {
         onChange={(event) => {
           dispatchStyle({
             type: "SET_TEXT_OUTLINE",
+            payload: event.currentTarget.checked,
+          });
+        }}
+      />
+      <Checkbox
+        title="Glow"
+        value={style.textGlow}
+        onChange={(event) => {
+          dispatchStyle({
+            type: "SET_TEXT_GLOW",
             payload: event.currentTarget.checked,
           });
         }}
