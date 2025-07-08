@@ -18,6 +18,7 @@ import calculateVideoMetadata from "../../../remotion/calcMetadata";
 import { useVideoConfigCtx } from "../../context/videoConfig";
 import useCaptionPages from "../../useCaptionPages";
 import CaptionEditor from "./CaptionEditor";
+import { path } from "@tauri-apps/api/";
 
 export type FetchAction = undefined | "transcribing" | "rendering";
 
@@ -147,9 +148,12 @@ export default function Tweaks({
                 {
                   method: "POST",
                   body: JSON.stringify({
-                    videoUrl: videoConfig.videoPath,
-                    captionAsPages: captionPages,
-                    textStyle: captionStyle,
+                    remotionBundle: path.resolveResource("../remotionBundle"),
+                    videoProps: {
+                      videoUrl: videoConfig.videoPath,
+                      captionAsPages: captionPages,
+                      textStyle: captionStyle,
+                    },
                   }),
                   headers: { "Content-Type": "application/json" },
                 }

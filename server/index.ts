@@ -14,10 +14,6 @@ import { type TiktokCaptionsCompositionProps } from "../remotion/TiktokCaptions"
 import { renderMedia, selectComposition } from "@remotion/renderer";
 
 const whsiperDir = path.join(process.cwd(), "whisper.cpp");
-const bundleLocation = fs.readFileSync(
-  path.join(process.cwd(), "../remotionBundle.txt"),
-  "utf-8"
-);
 
 {
   // todo: only download the model the user wants to use
@@ -69,23 +65,30 @@ app.post(
 );
 
 app.post("/render-video", async (req, res) => {
-  const videoProps = req.body as TiktokCaptionsCompositionProps;
-  fs.writeFileSync("./public/video.mp4", fs.readFileSync(videoProps.videoUrl));
+  const config = req.body as {
+    remotionBundle: string;
+    videoProps: TiktokCaptionsCompositionProps;
+  };
 
-  videoProps.videoUrl = `http://localhost:${port}/video.mp4`;
+  fs.writeFileSync(
+    "./public/video.mp4",
+    fs.readFileSync(config.videoProps.videoUrl)
+  );
+
+  config.videoProps.videoUrl = `http://localhost:${port}/video.mp4`;
 
   const composition = await selectComposition({
-    serveUrl: bundleLocation,
+    serveUrl: config.remotionBundle,
     id: "TiktokCaptions",
-    inputProps: videoProps,
+    inputProps: config.videoProps,
   });
 
   await renderMedia({
-    serveUrl: bundleLocation,
+    serveUrl: config.remotionBundle,
     composition,
     codec: "h264",
     outputLocation: `out/video.mp4`,
-    inputProps: videoProps,
+    inputProps: config.videoProps,
     onProgress(render) {
       console.log(`Render Progress ${Math.round(render.progress * 100)}%`);
     },

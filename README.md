@@ -16,9 +16,6 @@ cd useless-captions
 # install all the dependencies
 bun i
 
-# run this script (make sure to run it again when the ./remotion/ directory get's updated)
-bun bundleRemotion.ts
-
 # cd into the server, install server dependencies
 cd server
 bun i
