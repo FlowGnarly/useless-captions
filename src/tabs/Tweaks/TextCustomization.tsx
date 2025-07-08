@@ -1,4 +1,11 @@
-import { Checkbox, Paper, Slider, Typography } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Checkbox,
+  Paper,
+  Slider,
+  Typography,
+} from "@mui/material";
 import { Box } from "@mui/system";
 import { HsvaColor, hsvaToHex } from "@uiw/color-convert";
 import ShadeSlider from "@uiw/react-color-shade-slider";
@@ -90,107 +97,154 @@ export default function TextCustomization() {
         overflowY: "scroll",
       }}
     >
-      <Box
+      <Paper
         sx={{
           display: "flex",
           flexDirection: "row",
+          justifyContent: "center",
+          width: "50%",
         }}
       >
-        <Paper>
-          <Typography variant="h5">Primary Color</Typography>
-          <Wheel
-            color={style.color}
-            onChange={(color) => {
-              dispatchStyle({
-                type: "SET_TEXT_COLOR",
-                payload: color.hsva,
-              });
-            }}
-          />
-          <ShadeSlider
-            hsva={style.color}
-            onChange={(newShade) => {
-              dispatchStyle({
-                type: "SET_TEXT_COLOR",
-                payload: { ...style.color, ...newShade },
-              });
-            }}
-          />
-        </Paper>
+        <Card>
+          <CardContent>
+            <Typography variant="h5">Primary Color</Typography>
+            <Wheel
+              color={style.color}
+              onChange={(color) => {
+                dispatchStyle({
+                  type: "SET_TEXT_COLOR",
+                  payload: color.hsva,
+                });
+              }}
+            />
+            <ShadeSlider
+              hsva={style.color}
+              onChange={(newShade) => {
+                dispatchStyle({
+                  type: "SET_TEXT_COLOR",
+                  payload: { ...style.color, ...newShade },
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
 
-        <Paper>
-          <Typography variant="h5">Highlight Color</Typography>
-          <Wheel
-            color={style.highlightColor}
-            onChange={(color) => {
-              dispatchStyle({
-                type: "SET_HIGHLIGHT_COLOR",
-                payload: color.hsva,
-              });
-            }}
-          />
-          <ShadeSlider
-            hsva={style.highlightColor}
-            onChange={(newShade) => {
-              dispatchStyle({
-                type: "SET_HIGHLIGHT_COLOR",
-                payload: { ...style.highlightColor, ...newShade },
-              });
-            }}
-          />
-        </Paper>
-      </Box>
+        <Card>
+          <CardContent>
+            <Typography variant="h5">Highlight Color</Typography>
+            <Wheel
+              color={style.highlightColor}
+              onChange={(color) => {
+                dispatchStyle({
+                  type: "SET_HIGHLIGHT_COLOR",
+                  payload: color.hsva,
+                });
+              }}
+            />
+            <ShadeSlider
+              hsva={style.highlightColor}
+              onChange={(newShade) => {
+                dispatchStyle({
+                  type: "SET_HIGHLIGHT_COLOR",
+                  payload: { ...style.highlightColor, ...newShade },
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      </Paper>
 
-      <Slider
-        title="Y Position"
-        value={style.y}
-        onChange={(_, value) => {
-          dispatchStyle({
-            type: "SET_TEXT_Y",
-            payload: value,
-          });
-        }}
-        min={-1000}
-        max={1000}
+      <Paper
         sx={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
           width: "50%",
         }}
-      />
-      <Slider
-        title="Font Size"
-        value={style.fontSize}
-        onChange={(_, value) => {
-          dispatchStyle({
-            type: "SET_FONT_SIZE",
-            payload: value,
-          });
-        }}
-        min={2}
-        max={12}
+      >
+        <Card sx={{ width: "100%" }}>
+          <CardContent>
+            <Typography variant="h5">Y Position</Typography>
+            <Slider
+              title="Y Position"
+              value={style.y}
+              onChange={(_, value) => {
+                dispatchStyle({
+                  type: "SET_TEXT_Y",
+                  payload: value,
+                });
+              }}
+              min={-1000}
+              max={1000}
+              sx={{
+                width: "100%",
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        <Card sx={{ width: "100%" }}>
+          <CardContent>
+            <Typography variant="h5">Font Size</Typography>
+            <Slider
+              title="Font Size"
+              value={style.fontSize}
+              onChange={(_, value) => {
+                dispatchStyle({
+                  type: "SET_FONT_SIZE",
+                  payload: value,
+                });
+              }}
+              min={2}
+              max={12}
+              sx={{
+                width: "100%",
+              }}
+            />
+          </CardContent>
+        </Card>
+      </Paper>
+
+      <Paper
         sx={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
           width: "50%",
         }}
-      />
-      <Checkbox
-        title="Outline"
-        value={style.textOutline}
-        onChange={(event) => {
-          dispatchStyle({
-            type: "SET_TEXT_OUTLINE",
-            payload: event.currentTarget.checked,
-          });
-        }}
-      />
-      <Checkbox
-        title="Glow"
-        value={style.textGlow}
-        onChange={(event) => {
-          dispatchStyle({
-            type: "SET_TEXT_GLOW",
-            payload: event.currentTarget.checked,
-          });
-        }}
-      />
+      >
+        <Card sx={{ width: "100%" }}>
+          <CardContent>
+            <Typography variant="h5">Outline</Typography>
+            <Checkbox
+              title="Outline"
+              checked={style.textOutline}
+              onChange={(event) => {
+                dispatchStyle({
+                  type: "SET_TEXT_OUTLINE",
+                  payload: event.currentTarget.checked,
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        <Card sx={{ width: "100%" }}>
+          <CardContent>
+            <Typography variant="h5">Glow</Typography>
+            <Checkbox
+              title="Glow"
+              checked={style.textGlow}
+              onChange={(event) => {
+                dispatchStyle({
+                  type: "SET_TEXT_GLOW",
+                  payload: event.currentTarget.checked,
+                });
+              }}
+            />
+          </CardContent>
+        </Card>
+      </Paper>
     </Box>
   );
 }
