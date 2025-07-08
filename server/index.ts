@@ -89,8 +89,25 @@ app.post("/render-video", async (req, res) => {
     serveUrl: config.remotionBundle,
     composition,
     codec: "h264",
+    colorSpace: "bt709",
+    imageFormat: "png",
     outputLocation: `out/video.mp4`,
     inputProps: config.videoProps,
+
+    videoBitrate: "2M",
+    encodingMaxRate: "2M",
+    encodingBufferSize: "1M",
+
+    onStart({ frameCount, parallelEncoding, resolvedConcurrency }) {
+      console.log(`Beginning to render ${frameCount}.`);
+
+      if (parallelEncoding) {
+        console.log("Parallel encoding is enabled.");
+      }
+
+      console.log(`Using concurrency: ${resolvedConcurrency}`);
+    },
+
     onProgress(render) {
       const progress = Math.round(render.progress * 100);
       if (lastProgress === progress) return;
