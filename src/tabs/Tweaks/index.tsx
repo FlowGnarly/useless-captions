@@ -8,9 +8,7 @@ import {
   CardContent,
   Divider,
   Paper,
-  SxProps,
   TextField,
-  Theme,
   Typography,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -19,29 +17,31 @@ import CaptionIcon from "@mui/icons-material/ClosedCaption";
 import EditIcon from "@mui/icons-material/Edit";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useMemo, useState } from "react";
-import { Caption } from "@remotion/captions";
 import TextCustomization from "./TextCustomization";
-
-export interface TweaksProps {
-  onVideoSelected: (selected: string) => void;
-  onEditCaption: (index: number, edited: Caption) => void;
-  onRenderRequested: () => void;
-  captions?: Caption[];
-}
+import { useCaptionStyleCtx } from "../../context/captionStyle";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import calculateVideoMetadata from "../../../remotion/calcMetadata";
+import { useVideoConfigCtx } from "../../context/videoConfig";
+import useCaptionPages from "../../useCaptionPages";
 
 export default function Tweaks({
-  onVideoSelected,
-  captions,
-  onEditCaption,
-  onRenderRequested,
-}: TweaksProps) {
+  onUsingFetch,
+}: {
+  onUsingFetch: (info: undefined | "transcribing" | "rendering") => void;
+}) {
   const [tab, setTab] = useState(0);
   const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
+
+  const { style: captionStyle } = useCaptionStyleCtx();
+  const { config: videoConfig, setConfig: setVideoConfig } =
+    useVideoConfigCtx();
+  const captionPages = useCaptionPages(videoConfig.captions);
+
   const selectedCaption = useMemo(() => {
-    if (captions) {
-      return captions[selectedCaptionIndex];
+    if (videoConfig.captions) {
+      return videoConfig.captions[selectedCaptionIndex];
     }
-  }, [captions, selectedCaptionIndex]);
+  }, [videoConfig.captions, selectedCaptionIndex]);
 
   async function selectVideo() {
     const selected = await open({
@@ -55,7 +55,28 @@ export default function Tweaks({
     });
 
     if (selected) {
-      onVideoSelected(selected);
+      onUsingFetch("transcribing");
+
+      const selectedAsUrl = convertFileSrc(selected);
+      const fields = await calculateVideoMetadata(selectedAsUrl);
+      const captions = await (
+        await fetch("http://localhost:3123/generate-captions", {
+          method: "POST",
+          body: JSON.stringify({
+            videoPath: selected,
+          }),
+          headers: { "Content-Type": "application/json" },
+        })
+      ).json();
+
+      setVideoConfig({
+        videoUrl: selectedAsUrl,
+        videoPath: selected,
+        captions: captions,
+        metadata: fields,
+      });
+
+      onUsingFetch(undefined);
     }
   }
 
@@ -76,7 +97,7 @@ export default function Tweaks({
           <BottomNavigationAction
             label="Edit Captions"
             icon={<CaptionIcon />}
-            disabled={captions === undefined}
+            disabled={videoConfig.captions === undefined}
           />
           <BottomNavigationAction label="Customize Text" icon={<EditIcon />} />
         </BottomNavigation>
@@ -105,8 +126,22 @@ export default function Tweaks({
           <Button
             variant="contained"
             color="secondary"
-            onClick={onRenderRequested}
-            disabled={captions === undefined}
+            onClick={async () => {
+              onUsingFetch("rendering");
+
+              await fetch("http://localhost:3123/render-video/", {
+                method: "POST",
+                body: JSON.stringify({
+                  videoUrl: videoConfig.videoPath,
+                  captionAsPages: captionPages,
+                  textStyle: captionStyle,
+                }),
+                headers: { "Content-Type": "application/json" },
+              });
+
+              onUsingFetch(undefined);
+            }}
+            disabled={videoConfig.captions === undefined}
           >
             Render Video
           </Button>
@@ -127,8 +162,8 @@ export default function Tweaks({
               overflowY: "scroll",
             }}
           >
-            {captions &&
-              captions.map((caption, index) => {
+            {videoConfig.captions &&
+              videoConfig.captions.map((caption, index) => {
                 return (
                   <Card key={index}>
                     <CardActionArea
@@ -176,11 +211,16 @@ export default function Tweaks({
                 variant="filled"
                 value={selectedCaption.text}
                 onChange={(event) => {
-                  onEditCaption(selectedCaptionIndex, {
-                    ...selectedCaption,
-                    text: event.currentTarget.value,
+                  if (!videoConfig.videoUrl) return;
+
+                  const newCaptions = [...videoConfig.captions];
+                  newCaptions[selectedCaptionIndex].text =
+                    event.currentTarget.value;
+
+                  setVideoConfig({
+                    ...videoConfig,
+                    captions: newCaptions,
                   });
-                  setSelectedCaptionIndex(selectedCaptionIndex);
                 }}
               />
             </Box>
