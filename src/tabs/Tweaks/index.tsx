@@ -3,26 +3,21 @@ import {
   BottomNavigationAction,
   Box,
   Button,
-  Card,
-  CardActionArea,
-  CardContent,
-  Divider,
   Paper,
-  TextField,
-  Typography,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import InputIcon from "@mui/icons-material/Input";
 import CaptionIcon from "@mui/icons-material/ClosedCaption";
 import EditIcon from "@mui/icons-material/Edit";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import TextCustomization from "./TextCustomization";
 import { useCaptionStyleCtx } from "../../context/captionStyle";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import calculateVideoMetadata from "../../../remotion/calcMetadata";
 import { useVideoConfigCtx } from "../../context/videoConfig";
 import useCaptionPages from "../../useCaptionPages";
+import CaptionEditor from "./CaptionEditor";
 
 export type FetchAction = undefined | "transcribing" | "rendering";
 
@@ -36,18 +31,11 @@ export default function Tweaks({
   onFailedFetch: (info: FetchFailedResponse) => void;
 }) {
   const [tab, setTab] = useState(0);
-  const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
 
   const { style: captionStyle } = useCaptionStyleCtx();
   const { config: videoConfig, setConfig: setVideoConfig } =
     useVideoConfigCtx();
   const captionPages = useCaptionPages(videoConfig.captions);
-
-  const selectedCaption = useMemo(() => {
-    if (videoConfig.captions) {
-      return videoConfig.captions[selectedCaptionIndex];
-    }
-  }, [videoConfig.captions, selectedCaptionIndex]);
 
   async function selectVideo() {
     const selected = await open({
@@ -197,83 +185,7 @@ export default function Tweaks({
       </Box>
 
       <Box hidden={tab !== 1} style={{ height: "100%", width: "100%" }}>
-        <Box
-          sx={{
-            height: "100%",
-            width: "100%",
-          }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              height: "70%",
-              overflowY: "scroll",
-            }}
-          >
-            {videoConfig.captions &&
-              videoConfig.captions.map((caption, index) => {
-                return (
-                  <Card key={index}>
-                    <CardActionArea
-                      data-active={
-                        selectedCaptionIndex === index ? "" : undefined
-                      }
-                      onClick={() => setSelectedCaptionIndex(index)}
-                      sx={{
-                        height: "100%",
-                        "&[data-active]": {
-                          backgroundColor: "action.selected",
-                          "&:hover": {
-                            backgroundColor: "action.selectedHover",
-                          },
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Typography variant="h5">{caption.text}</Typography>
-                        <Typography>
-                          {caption.startMs}ms ~ {caption.endMs}ms
-                        </Typography>
-                      </CardContent>
-                    </CardActionArea>
-                  </Card>
-                );
-              })}
-          </Box>
-
-          <Divider />
-
-          {selectedCaption && (
-            <Box
-              sx={{
-                bgcolor: "Window",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                width: "100%",
-                height: "30%",
-              }}
-            >
-              <TextField
-                helperText="Edit caption"
-                variant="filled"
-                value={selectedCaption.text}
-                onChange={(event) => {
-                  if (!videoConfig.videoUrl) return;
-
-                  const newCaptions = [...videoConfig.captions];
-                  newCaptions[selectedCaptionIndex].text =
-                    event.currentTarget.value;
-
-                  setVideoConfig({
-                    ...videoConfig,
-                    captions: newCaptions,
-                  });
-                }}
-              />
-            </Box>
-          )}
-        </Box>
+        <CaptionEditor />
       </Box>
 
       <Box hidden={tab !== 2} style={{ height: "100%", width: "100%" }}>
