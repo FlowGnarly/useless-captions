@@ -148,7 +148,9 @@ export default function Tweaks({
                 {
                   method: "POST",
                   body: JSON.stringify({
-                    remotionBundle: path.resolveResource("../remotionBundle"),
+                    remotionBundle: await path.resolveResource(
+                      "../remotionBundle"
+                    ),
                     videoProps: {
                       videoUrl: videoConfig.videoPath,
                       captionAsPages: captionPages,
