@@ -13,9 +13,6 @@ you're gonna have to run the server in your terminal before you open the softwar
 git clone https://github.com/flowgnarly/useless-captions
 cd useless-captions
 
-# install all the dependencies
-bun i
-
 # cd into the server, install server dependencies
 cd server
 bun i
