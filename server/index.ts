@@ -83,6 +83,8 @@ app.post("/render-video", async (req, res) => {
     inputProps: config.videoProps,
   });
 
+  let lastProgress = 0;
+
   await renderMedia({
     serveUrl: config.remotionBundle,
     composition,
@@ -90,7 +92,11 @@ app.post("/render-video", async (req, res) => {
     outputLocation: `out/video.mp4`,
     inputProps: config.videoProps,
     onProgress(render) {
-      console.log(`Render Progress ${Math.round(render.progress * 100)}%`);
+      const progress = Math.round(render.progress * 100);
+      if (lastProgress === progress) return;
+
+      lastProgress = progress;
+      console.log(`Rendering ${progress}%`);
     },
   });
 
