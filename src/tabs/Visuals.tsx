@@ -1,21 +1,22 @@
-import { Box, SxProps, Theme } from "@mui/material";
+import { Box } from "@mui/material";
 import VideoPlayer from "../VideoPlayer";
 import { VideoMetadata } from "../../remotion/Root";
 import { TikTokPage } from "@remotion/captions";
+import { useCaptionStyleCtx } from "../context/captionStyle";
 
 export interface VisualsProps {
   videoUrl?: string;
   videoMetadata?: VideoMetadata;
   captionsAsPages?: TikTokPage[];
-  textStyle: SxProps<Theme>;
 }
 
 export default function Visuals({
   videoUrl,
   videoMetadata,
   captionsAsPages,
-  textStyle,
 }: VisualsProps) {
+  const { style: captionStyle } = useCaptionStyleCtx();
+
   return (
     <Box
       sx={{
@@ -31,7 +32,7 @@ export default function Visuals({
         src={videoUrl}
         metadata={videoMetadata}
         captionsAsPages={captionsAsPages}
-        textStyle={textStyle}
+        textStyle={captionStyle}
       />
     </Box>
   );

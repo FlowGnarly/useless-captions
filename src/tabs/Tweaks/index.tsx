@@ -25,17 +25,14 @@ import TextCustomization from "./TextCustomization";
 export interface TweaksProps {
   onVideoSelected: (selected: string) => void;
   onEditCaption: (index: number, edited: Caption) => void;
-  onEditTextStyle: (edits: SxProps<Theme>) => void;
   onRenderRequested: () => void;
   captions?: Caption[];
-  textStyle: SxProps<Theme>;
 }
 
 export default function Tweaks({
   onVideoSelected,
   captions,
   onEditCaption,
-  onEditTextStyle,
   onRenderRequested,
 }: TweaksProps) {
   const [tab, setTab] = useState(0);
@@ -192,7 +189,7 @@ export default function Tweaks({
       </Box>
 
       <Box hidden={tab !== 2} style={{ height: "100%", width: "100%" }}>
-        <TextCustomization onEditTextStyle={onEditTextStyle} />
+        <TextCustomization />
       </Box>
     </>
   );

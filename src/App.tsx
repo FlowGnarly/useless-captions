@@ -4,8 +4,6 @@ import {
   Divider,
   LinearProgress,
   Paper,
-  SxProps,
-  Theme,
   Typography,
 } from "@mui/material";
 import Preview from "./tabs/Visuals";
@@ -15,6 +13,9 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Caption, createTikTokStyleCaptions } from "@remotion/captions";
 import { VideoMetadata } from "../remotion/Root";
 import calculateVideoMetadata from "../remotion/calcMetadata";
+import CaptionStyleProvider, {
+  useCaptionStyleCtx,
+} from "./context/captionStyle";
 
 type CaptionGenerationStage = "transcribing";
 
@@ -26,7 +27,7 @@ export default function App() {
   const [captionGenerationStage, setCaptionGenerationStage] =
     useState<CaptionGenerationStage>();
   const [captions, setCaptions] = useState<Caption[]>();
-  const [textStyle, setTextStyle] = useState<SxProps<Theme>>({});
+  // const [textStyle, setTextStyle] = useState<SxProps<Theme>>({});
 
   const captionsAsPages = useMemo(() => {
     if (captions) {
@@ -53,94 +54,89 @@ export default function App() {
   }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "row",
-        height: "calc(100dvh - 56px)",
-        width: "100%",
-      }}
-    >
+    <CaptionStyleProvider>
       <Box
         sx={{
-          bgcolor: "AppWorkspace",
-          height: "100%",
-          width: "60%",
+          display: "flex",
+          flexDirection: "row",
+          height: "calc(100dvh - 56px)",
+          width: "100%",
         }}
       >
-        <Dialog open={captionGenerationStage !== undefined}>
-          <div hidden={captionGenerationStage !== "transcribing"}>
-            <Paper
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "16rem",
-                width: "24rem",
-              }}
-            >
-              <Typography variant="h6">Generating captions</Typography>
-              <LinearProgress variant="indeterminate" sx={{ width: "80%" }} />
-            </Paper>
-          </div>
-        </Dialog>
+        <Box
+          sx={{
+            bgcolor: "AppWorkspace",
+            height: "100%",
+            width: "60%",
+          }}
+        >
+          <Dialog open={captionGenerationStage !== undefined}>
+            <div hidden={captionGenerationStage !== "transcribing"}>
+              <Paper
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "16rem",
+                  width: "24rem",
+                }}
+              >
+                <Typography variant="h6">Generating captions</Typography>
+                <LinearProgress variant="indeterminate" sx={{ width: "80%" }} />
+              </Paper>
+            </div>
+          </Dialog>
 
-        <Tweaks
-          textStyle={textStyle}
-          captions={captions}
-          onVideoSelected={async (selected) => {
-            const selectedAsUrl = convertFileSrc(selected);
-            const fields = await calculateVideoMetadata(selectedAsUrl);
+          <Tweaks
+            captions={captions}
+            onVideoSelected={async (selected) => {
+              const selectedAsUrl = convertFileSrc(selected);
+              const fields = await calculateVideoMetadata(selectedAsUrl);
 
-            setVideoUrl(selectedAsUrl);
-            setVideoPath(selected);
-            setVideoMetadata(fields);
+              setVideoUrl(selectedAsUrl);
+              setVideoPath(selected);
+              setVideoMetadata(fields);
 
-            await generateCaptions(selected);
+              await generateCaptions(selected);
+            }}
+            onEditCaption={(captionIndex, editedCaption) => {
+              setCaptions((prevCaptions) => {
+                const updated = [...prevCaptions!];
+                updated[captionIndex] = { ...editedCaption };
+                return updated;
+              });
+            }}
+            onRenderRequested={() => {
+              fetch("http://localhost:3123/render-video/", {
+                method: "POST",
+                body: JSON.stringify({
+                  videoUrl: videoPath,
+                  captionAsPages: captionsAsPages,
+                  textStyle: useCaptionStyleCtx().style,
+                }),
+                headers: { "Content-Type": "application/json" },
+              });
+            }}
+          />
+        </Box>
+
+        <Divider orientation="vertical" flexItem />
+
+        <Box
+          sx={{
+            bgcolor: "AppWorkspace",
+            height: "100%",
+            width: "40%",
           }}
-          onEditTextStyle={(textStyleEdits) => {
-            setTextStyle((prevTextStyle: SxProps<Theme>) => {
-              return { ...prevTextStyle, ...textStyleEdits };
-            });
-          }}
-          onEditCaption={(captionIndex, editedCaption) => {
-            setCaptions((prevCaptions) => {
-              const updated = [...prevCaptions!];
-              updated[captionIndex] = { ...editedCaption };
-              return updated;
-            });
-          }}
-          onRenderRequested={() => {
-            fetch("http://localhost:3123/render-video/", {
-              method: "POST",
-              body: JSON.stringify({
-                videoUrl: videoPath,
-                captionAsPages: captionsAsPages,
-                textStyle: textStyle,
-              }),
-              headers: { "Content-Type": "application/json" },
-            });
-          }}
-        />
+        >
+          <Preview
+            videoUrl={videoUrl}
+            videoMetadata={videoMetadata}
+            captionsAsPages={captionsAsPages}
+          />
+        </Box>
       </Box>
-
-      <Divider orientation="vertical" flexItem />
-
-      <Box
-        sx={{
-          bgcolor: "AppWorkspace",
-          height: "100%",
-          width: "40%",
-        }}
-      >
-        <Preview
-          videoUrl={videoUrl}
-          videoMetadata={videoMetadata}
-          captionsAsPages={captionsAsPages}
-          textStyle={textStyle}
-        />
-      </Box>
-    </Box>
+    </CaptionStyleProvider>
   );
 }

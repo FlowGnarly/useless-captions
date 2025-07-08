@@ -1,70 +1,75 @@
-import { Checkbox, Paper, Slider, SxProps, Typography } from "@mui/material";
-import { Box, Theme } from "@mui/system";
+import { Checkbox, Paper, Slider, Typography } from "@mui/material";
+import { Box } from "@mui/system";
 import { HsvaColor, hsvaToHex } from "@uiw/color-convert";
 import ShadeSlider from "@uiw/react-color-shade-slider";
 import Wheel from "@uiw/react-color-wheel";
 import { useEffect, useReducer } from "react";
+import { useCaptionStyleCtx } from "../../context/captionStyle";
 
-type TextStyleState = {
-  textColor: HsvaColor;
+type StyleState = {
+  color: HsvaColor;
   highlightColor: HsvaColor;
   textOutline: boolean;
-  textY: number;
+  y: number;
+  fontSize: number;
 };
 
-type TextStyleDispatchAction =
+type StyleDispatchAction =
   | { type: "SET_TEXT_COLOR"; payload: HsvaColor }
   | { type: "SET_HIGHLIGHT_COLOR"; payload: HsvaColor }
   | { type: "SET_TEXT_OUTLINE"; payload: boolean }
-  | { type: "SET_TEXT_Y"; payload: number };
+  | { type: "SET_TEXT_Y"; payload: number }
+  | { type: "SET_FONT_SIZE"; payload: number };
 
-function textStyleReducer(
-  state: TextStyleState,
-  action: TextStyleDispatchAction
-): TextStyleState {
+function styleReducer(
+  state: StyleState,
+  action: StyleDispatchAction
+): StyleState {
   switch (action.type) {
     case "SET_TEXT_COLOR":
-      return { ...state, textColor: action.payload };
+      return { ...state, color: action.payload };
     case "SET_HIGHLIGHT_COLOR":
       return { ...state, highlightColor: action.payload };
     case "SET_TEXT_OUTLINE":
       return { ...state, textOutline: action.payload };
     case "SET_TEXT_Y":
-      return { ...state, textY: action.payload };
+      return { ...state, y: action.payload };
+    case "SET_FONT_SIZE":
+      return { ...state, fontSize: action.payload };
     default:
       return state;
   }
 }
 
-export default function TextCustomization({
-  onEditTextStyle,
-}: {
-  onEditTextStyle: (changes: SxProps<Theme>) => void;
-}) {
-  const [textStyle, dispatchTextStyle] = useReducer(textStyleReducer, {
-    textColor: { h: 214, s: 43, v: 90, a: 1 },
+export default function TextCustomization() {
+  const { updateStyle } = useCaptionStyleCtx();
+
+  const [style, dispatchStyle] = useReducer(styleReducer, {
+    color: { h: 214, s: 43, v: 90, a: 1 },
     highlightColor: { h: 214, s: 43, v: 90, a: 1 },
     textOutline: false,
-    textY: 0,
+    y: 0,
+    fontSize: 4,
   });
 
   useEffect(() => {
     const shadowBase = `0px 0px 50px ${hsvaToHex(
-      textStyle.textColor
-    )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(textStyle.textColor)}`;
-    const textShadow = textStyle.textOutline
+      style.color
+    )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(style.color)}`;
+    const textShadow = style.textOutline
       ? `-1px -1px 5px black, ${shadowBase}`
       : shadowBase;
 
-    onEditTextStyle({
+    updateStyle({
       textShadow,
-      color: hsvaToHex(textStyle.textColor),
+      color: hsvaToHex(style.color),
       "&[data-highlight]": {
-        backgroundColor: hsvaToHex(textStyle.highlightColor),
+        backgroundColor: hsvaToHex(style.highlightColor),
       },
-      transform: `translate(0, ${textStyle.textY}px)`,
+      transform: `translate(0, ${style.y}px)`,
+      fontSize: `${style.fontSize}em`,
     });
-  }, [textStyle]);
+  }, [style]);
 
   return (
     <Box
@@ -87,20 +92,20 @@ export default function TextCustomization({
         <Paper>
           <Typography variant="h5">Primary Color</Typography>
           <Wheel
-            color={textStyle.textColor}
+            color={style.color}
             onChange={(color) => {
-              dispatchTextStyle({
+              dispatchStyle({
                 type: "SET_TEXT_COLOR",
                 payload: color.hsva,
               });
             }}
           />
           <ShadeSlider
-            hsva={textStyle.textColor}
+            hsva={style.color}
             onChange={(newShade) => {
-              dispatchTextStyle({
+              dispatchStyle({
                 type: "SET_TEXT_COLOR",
-                payload: { ...textStyle.textColor, ...newShade },
+                payload: { ...style.color, ...newShade },
               });
             }}
           />
@@ -109,20 +114,20 @@ export default function TextCustomization({
         <Paper>
           <Typography variant="h5">Highlight Color</Typography>
           <Wheel
-            color={textStyle.highlightColor}
+            color={style.highlightColor}
             onChange={(color) => {
-              dispatchTextStyle({
+              dispatchStyle({
                 type: "SET_HIGHLIGHT_COLOR",
                 payload: color.hsva,
               });
             }}
           />
           <ShadeSlider
-            hsva={textStyle.highlightColor}
+            hsva={style.highlightColor}
             onChange={(newShade) => {
-              dispatchTextStyle({
+              dispatchStyle({
                 type: "SET_HIGHLIGHT_COLOR",
-                payload: { ...textStyle.highlightColor, ...newShade },
+                payload: { ...style.highlightColor, ...newShade },
               });
             }}
           />
@@ -130,9 +135,10 @@ export default function TextCustomization({
       </Box>
 
       <Slider
-        value={textStyle.textY}
+        title="Y Position"
+        value={style.y}
         onChange={(_, value) => {
-          dispatchTextStyle({
+          dispatchStyle({
             type: "SET_TEXT_Y",
             payload: value,
           });
@@ -143,11 +149,26 @@ export default function TextCustomization({
           width: "50%",
         }}
       />
+      <Slider
+        title="Font Size"
+        value={style.fontSize}
+        onChange={(_, value) => {
+          dispatchStyle({
+            type: "SET_FONT_SIZE",
+            payload: value,
+          });
+        }}
+        min={2}
+        max={12}
+        sx={{
+          width: "50%",
+        }}
+      />
       <Checkbox
         title="Outline"
-        value={textStyle.textOutline}
+        value={style.textOutline}
         onChange={(event) => {
-          dispatchTextStyle({
+          dispatchStyle({
             type: "SET_TEXT_OUTLINE",
             payload: event.currentTarget.checked,
           });
