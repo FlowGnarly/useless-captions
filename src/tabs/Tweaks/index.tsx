@@ -18,7 +18,7 @@ import calculateVideoMetadata from "../../../remotion/calcMetadata";
 import { useVideoConfigCtx } from "../../context/videoConfig";
 import useCaptionPages from "../../useCaptionPages";
 import CaptionEditor from "./CaptionEditor";
-import { path } from "@tauri-apps/api/";
+import { path } from "@tauri-apps/api";
 
 export type FetchAction = undefined | "transcribing" | "rendering";
 
