@@ -1,14 +1,19 @@
 import {
+  Alert,
+  AlertTitle,
   BottomNavigation,
   BottomNavigationAction,
   Box,
   Button,
+  Dialog,
   FormControl,
   Grid,
   InputLabel,
+  LinearProgress,
   MenuItem,
   Paper,
   Select,
+  Typography,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import InputIcon from "@mui/icons-material/Input";
@@ -24,10 +29,6 @@ import { useVideoConfigCtx } from "../../context/videoConfig";
 import useCaptionPages from "../../useCaptionPages";
 import CaptionEditor from "./CaptionEditor";
 import { path } from "@tauri-apps/api";
-
-export type FetchAction = undefined | "transcribing" | "rendering";
-
-export type FetchFailedResponse = { code: number; reason: string };
 
 const whisperModels = [
   "tiny",
@@ -46,15 +47,29 @@ const whisperModels = [
 
 export type WhisperModel = (typeof whisperModels)[number];
 
-export default function Tweaks({
-  onStartedFetch,
-  onFailedFetch,
-}: {
-  onStartedFetch: (info: FetchAction) => void;
-  onFailedFetch: (info: FetchFailedResponse) => void;
-}) {
+export default function Tweaks() {
   const [tab, setTab] = useState(0);
   const [whisperModel, setWhisperModel] = useState<WhisperModel>("small.en");
+  const [fetchAction, setFetchAction] = useState<
+    undefined | "transcribing" | "rendering"
+  >();
+  const [fetchErrors, setFetchErrors] = useState<
+    { code: number; reason: string }[]
+  >([]);
+
+  function pushFetchError({ code, reason }: { code: number; reason: string }) {
+    setFetchErrors((prevErrors) => {
+      return [
+        {
+          code,
+          reason,
+        },
+        ...prevErrors,
+      ];
+    });
+
+    setFetchAction(undefined);
+  }
 
   const { style: captionStyle } = useCaptionStyleCtx();
   const { config: videoConfig, setConfig: setVideoConfig } =
@@ -74,7 +89,7 @@ export default function Tweaks({
     });
 
     if (selected) {
-      onStartedFetch("transcribing");
+      setFetchAction("transcribing");
 
       const selectedAsUrl = convertFileSrc(selected);
       const fields = await calculateVideoMetadata(selectedAsUrl);
@@ -91,7 +106,7 @@ export default function Tweaks({
       });
 
       if (!captions) {
-        onFailedFetch({
+        pushFetchError({
           code: 404,
           reason: "Fetch request didn't get a response",
         });
@@ -100,7 +115,7 @@ export default function Tweaks({
       }
 
       if (!captions.ok) {
-        onFailedFetch({
+        pushFetchError({
           code: captions.status,
           reason: captions.statusText,
         });
@@ -115,7 +130,7 @@ export default function Tweaks({
         metadata: fields,
       });
 
-      onStartedFetch(undefined);
+      setFetchAction(undefined);
     }
   }
 
@@ -151,8 +166,76 @@ export default function Tweaks({
             width: "100%",
             justifyContent: "center",
             alignItems: "center",
+            position: "relative",
           }}
         >
+          <Dialog open={fetchAction !== undefined}>
+            <div hidden={fetchAction !== "transcribing"}>
+              <Paper
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "16rem",
+                  width: "24rem",
+                }}
+              >
+                <Typography variant="h6">Generating captions</Typography>
+                <LinearProgress variant="indeterminate" sx={{ width: "80%" }} />
+              </Paper>
+            </div>
+
+            <div hidden={fetchAction !== "rendering"}>
+              <Paper
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "16rem",
+                  width: "24rem",
+                }}
+              >
+                <Typography variant="h6">Rendering video</Typography>
+                <LinearProgress variant="indeterminate" sx={{ width: "80%" }} />
+              </Paper>
+            </div>
+          </Dialog>
+
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "end",
+            }}
+          >
+            {fetchErrors.map((err, index) => {
+              return (
+                <Alert
+                  key={index}
+                  severity="error"
+                  variant="filled"
+                  onClose={() =>
+                    setFetchErrors((prevErrors) => {
+                      const newError = [...prevErrors, null];
+
+                      newError[index] = null;
+
+                      return [...newError.filter((v) => v !== null)];
+                    })
+                  }
+                >
+                  <AlertTitle>{err.code}</AlertTitle>
+                  {err.reason}
+                </Alert>
+              );
+            })}
+          </Box>
+
           <FormControl>
             <InputLabel>Whisper Model</InputLabel>
             <Select
@@ -161,7 +244,11 @@ export default function Tweaks({
               onChange={(event) => setWhisperModel(event.target.value)}
             >
               {whisperModels.map((model) => {
-                return <MenuItem value={model}>{model}</MenuItem>;
+                return (
+                  <MenuItem key={model} value={model}>
+                    {model}
+                  </MenuItem>
+                );
               })}
             </Select>
           </FormControl>
@@ -179,7 +266,7 @@ export default function Tweaks({
             variant="contained"
             color="secondary"
             onClick={async () => {
-              onStartedFetch("rendering");
+              setFetchAction("rendering");
 
               const render = await fetch(
                 "http://localhost:3123/render-video/",
@@ -202,7 +289,7 @@ export default function Tweaks({
               });
 
               if (!render) {
-                onFailedFetch({
+                pushFetchError({
                   code: 404,
                   reason: "Fetch request didn't get a response",
                 });
@@ -211,7 +298,7 @@ export default function Tweaks({
               }
 
               if (!render.ok) {
-                onFailedFetch({
+                pushFetchError({
                   code: render.status,
                   reason: render.statusText,
                 });
@@ -219,7 +306,7 @@ export default function Tweaks({
                 return;
               }
 
-              onStartedFetch(undefined);
+              setFetchAction(undefined);
             }}
             disabled={videoConfig.captions === undefined}
           >
