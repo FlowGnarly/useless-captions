@@ -22,7 +22,7 @@ import InputIcon from "@mui/icons-material/Input";
 import CaptionIcon from "@mui/icons-material/ClosedCaption";
 import EditIcon from "@mui/icons-material/Edit";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { Caption } from "@remotion/captions";
 import { HsvaColor, hsvaToHex } from "@uiw/color-convert";
 
@@ -33,6 +33,37 @@ export interface TweaksProps {
   onRenderRequested: () => void;
   captions?: Caption[];
   textStyle: SxProps<Theme>;
+}
+
+type TextStyleState = {
+  textColor: HsvaColor;
+  highlightColor: HsvaColor;
+  textOutline: boolean;
+  textY: number;
+};
+
+type Action =
+  | { type: "SET_TEXT_COLOR"; payload: HsvaColor }
+  | { type: "SET_HIGHLIGHT_COLOR"; payload: HsvaColor }
+  | { type: "SET_TEXT_OUTLINE"; payload: boolean }
+  | { type: "SET_TEXT_Y"; payload: number };
+
+function textStyleReducer(
+  state: TextStyleState,
+  action: Action
+): TextStyleState {
+  switch (action.type) {
+    case "SET_TEXT_COLOR":
+      return { ...state, textColor: action.payload };
+    case "SET_HIGHLIGHT_COLOR":
+      return { ...state, highlightColor: action.payload };
+    case "SET_TEXT_OUTLINE":
+      return { ...state, textOutline: action.payload };
+    case "SET_TEXT_Y":
+      return { ...state, textY: action.payload };
+    default:
+      return state;
+  }
 }
 
 export default function Tweaks({
@@ -50,35 +81,30 @@ export default function Tweaks({
     }
   }, [captions, selectedCaptionIndex]);
 
-  const [textColor, setTextColor] = useState<HsvaColor>({
-    h: 214,
-    s: 43,
-    v: 90,
-    a: 1,
+  const [textStyle, dispatchTextStyle] = useReducer(textStyleReducer, {
+    textColor: { h: 214, s: 43, v: 90, a: 1 },
+    highlightColor: { h: 214, s: 43, v: 90, a: 1 },
+    textOutline: false,
+    textY: 0,
   });
-  const [highlightColor, setHighlightColor] = useState<HsvaColor>({
-    h: 214,
-    s: 43,
-    v: 90,
-    a: 1,
-  });
-  const [textOutline, setTextOutline] = useState(false);
-  const [textY, setTextY] = useState<number>(0);
 
   useEffect(() => {
-    let textShadowEffect = `0px 0px 50px ${hsvaToHex(
-      textColor
-    )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(textColor)}`;
-
-    if (textOutline) {
-      textShadowEffect = `-1px -1px 5px black, ${textShadowEffect}`;
-    }
+    const shadowBase = `0px 0px 50px ${hsvaToHex(
+      textStyle.textColor
+    )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(textStyle.textColor)}`;
+    const textShadow = textStyle.textOutline
+      ? `-1px -1px 5px black, ${shadowBase}`
+      : shadowBase;
 
     onEditTextStyle({
-      textShadow: textShadowEffect,
-      color: hsvaToHex(textColor),
+      textShadow,
+      color: hsvaToHex(textStyle.textColor),
+      "&[data-highlight]": {
+        backgroundColor: hsvaToHex(textStyle.highlightColor),
+      },
+      transform: `translate(0, ${textStyle.textY}px)`,
     });
-  }, [textColor, textOutline]);
+  }, [textStyle]);
 
   async function selectVideo() {
     const selected = await open({
@@ -246,16 +272,21 @@ export default function Tweaks({
             <Paper>
               <Typography variant="h5">Primary Color</Typography>
               <Wheel
-                color={textColor}
+                color={textStyle.textColor}
                 onChange={(color) => {
-                  setTextColor(color.hsva);
+                  dispatchTextStyle({
+                    type: "SET_TEXT_COLOR",
+                    payload: color.hsva,
+                  });
                 }}
               />
               <ShadeSlider
-                hsva={textColor}
+                hsva={textStyle.textColor}
                 onChange={(newShade) => {
-                  const color = { ...textColor, ...newShade };
-                  setTextColor(color);
+                  dispatchTextStyle({
+                    type: "SET_TEXT_COLOR",
+                    payload: { ...textStyle.textColor, ...newShade },
+                  });
                 }}
               />
             </Paper>
@@ -263,25 +294,20 @@ export default function Tweaks({
             <Paper>
               <Typography variant="h5">Highlight Color</Typography>
               <Wheel
-                color={highlightColor}
+                color={textStyle.highlightColor}
                 onChange={(color) => {
-                  setHighlightColor(color.hsva);
-                  onEditTextStyle({
-                    "&[data-highlight]": {
-                      backgroundColor: color.hex,
-                    },
+                  dispatchTextStyle({
+                    type: "SET_HIGHLIGHT_COLOR",
+                    payload: color.hsva,
                   });
                 }}
               />
               <ShadeSlider
-                hsva={highlightColor}
+                hsva={textStyle.highlightColor}
                 onChange={(newShade) => {
-                  const color = { ...highlightColor, ...newShade };
-                  setHighlightColor(color);
-                  onEditTextStyle({
-                    "&[data-highlight]": {
-                      backgroundColor: hsvaToHex(color),
-                    },
+                  dispatchTextStyle({
+                    type: "SET_HIGHLIGHT_COLOR",
+                    payload: { ...textStyle.highlightColor, ...newShade },
                   });
                 }}
               />
@@ -289,11 +315,11 @@ export default function Tweaks({
           </Box>
 
           <Slider
-            value={textY}
+            value={textStyle.textY}
             onChange={(_, value) => {
-              setTextY(value);
-              onEditTextStyle({
-                transform: `translate(0, ${value}px)`,
+              dispatchTextStyle({
+                type: "SET_TEXT_Y",
+                payload: value,
               });
             }}
             min={-1000}
@@ -304,9 +330,12 @@ export default function Tweaks({
           />
           <Checkbox
             title="Outline"
-            value={textOutline}
+            value={textStyle.textOutline}
             onChange={(event) => {
-              setTextOutline(event.currentTarget.checked);
+              dispatchTextStyle({
+                type: "SET_TEXT_OUTLINE",
+                payload: event.currentTarget.checked,
+              });
             }}
           />
         </Box>
