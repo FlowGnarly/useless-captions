@@ -9,6 +9,7 @@ import {
   installWhisperCpp,
   transcribe,
   toCaptions,
+  type WhisperModel,
 } from "@remotion/install-whisper-cpp";
 import { type TiktokCaptionsCompositionProps } from "../remotion/TiktokCaptions";
 import { renderMedia, selectComposition } from "@remotion/renderer";
@@ -16,15 +17,9 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 const whsiperDir = path.join(process.cwd(), "whisper.cpp");
 
 {
-  // todo: only download the model the user wants to use
   await installWhisperCpp({
     to: whsiperDir,
     version: "1.5.5",
-  });
-
-  await downloadWhisperModel({
-    model: "small.en",
-    folder: whsiperDir,
   });
 }
 
@@ -42,18 +37,27 @@ app.post(
   "/generate-captions",
   express.raw({ type: "application/octet-stream" }),
   async (req, res) => {
-    const videoPath = req.body.videoPath as string;
+    const { videoPath, whisperModel } = req.body as {
+      videoPath: string;
+      whisperModel: WhisperModel;
+    };
+
+    await downloadWhisperModel({
+      model: whisperModel,
+      folder: whsiperDir,
+    });
 
     // ffmpeg -i /path/to/audio.mp4 -ar 16000 /path/to/audio.wav -y
     await exec(`ffmpeg -y -i "${videoPath}" -ar 16000 "out/audio.wav"`);
 
     const whisperCppOutput = await transcribe({
-      model: "small.en",
+      model: whisperModel,
       whisperPath: whsiperDir,
       whisperCppVersion: "1.5.5",
       inputPath: path.join(process.cwd(), "/out/audio.wav"),
       tokenLevelTimestamps: true,
       splitOnWord: true,
+      translateToEnglish: true,
     });
 
     res.status(200).json(

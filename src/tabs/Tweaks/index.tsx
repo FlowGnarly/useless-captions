@@ -3,7 +3,12 @@ import {
   BottomNavigationAction,
   Box,
   Button,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import InputIcon from "@mui/icons-material/Input";
@@ -24,6 +29,23 @@ export type FetchAction = undefined | "transcribing" | "rendering";
 
 export type FetchFailedResponse = { code: number; reason: string };
 
+const whisperModels = [
+  "tiny",
+  "tiny.en",
+  "base",
+  "base.en",
+  "small",
+  "small.en",
+  "medium",
+  "medium.en",
+  "large-v1",
+  "large-v2",
+  "large-v3",
+  "large-v3-turbo",
+];
+
+export type WhisperModel = (typeof whisperModels)[number];
+
 export default function Tweaks({
   onStartedFetch,
   onFailedFetch,
@@ -32,10 +54,12 @@ export default function Tweaks({
   onFailedFetch: (info: FetchFailedResponse) => void;
 }) {
   const [tab, setTab] = useState(0);
+  const [whisperModel, setWhisperModel] = useState<WhisperModel>("small.en");
 
   const { style: captionStyle } = useCaptionStyleCtx();
   const { config: videoConfig, setConfig: setVideoConfig } =
     useVideoConfigCtx();
+
   const captionPages = useCaptionPages(videoConfig.captions);
 
   async function selectVideo() {
@@ -59,6 +83,7 @@ export default function Tweaks({
         method: "POST",
         body: JSON.stringify({
           videoPath: selected,
+          whisperModel,
         }),
         headers: { "Content-Type": "application/json" },
       }).catch(() => {
@@ -118,16 +143,29 @@ export default function Tweaks({
       </Paper>
 
       <Box hidden={tab !== 0} style={{ height: "100%", width: "100%" }}>
-        <Box
+        <Grid
+          spacing={2}
+          container
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
             height: "100%",
             width: "100%",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
+          <FormControl>
+            <InputLabel>Whisper Model</InputLabel>
+            <Select
+              value={whisperModel}
+              label="Age"
+              onChange={(event) => setWhisperModel(event.target.value)}
+            >
+              {whisperModels.map((model) => {
+                return <MenuItem value={model}>{model}</MenuItem>;
+              })}
+            </Select>
+          </FormControl>
+
           <Button
             variant="contained"
             tabIndex={-1}
@@ -187,7 +225,7 @@ export default function Tweaks({
           >
             Render Video
           </Button>
-        </Box>
+        </Grid>
       </Box>
 
       <Box hidden={tab !== 1} style={{ height: "100%", width: "100%" }}>
