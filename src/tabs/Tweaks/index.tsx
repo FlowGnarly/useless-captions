@@ -24,10 +24,16 @@ import calculateVideoMetadata from "../../../remotion/calcMetadata";
 import { useVideoConfigCtx } from "../../context/videoConfig";
 import useCaptionPages from "../../useCaptionPages";
 
+export type FetchAction = undefined | "transcribing" | "rendering";
+
+export type FetchFailedResponse = { code: number; reason: string };
+
 export default function Tweaks({
-  onUsingFetch,
+  onStartedFetch,
+  onFailedFetch,
 }: {
-  onUsingFetch: (info: undefined | "transcribing" | "rendering") => void;
+  onStartedFetch: (info: FetchAction) => void;
+  onFailedFetch: (info: FetchFailedResponse) => void;
 }) {
   const [tab, setTab] = useState(0);
   const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
@@ -55,28 +61,47 @@ export default function Tweaks({
     });
 
     if (selected) {
-      onUsingFetch("transcribing");
+      onStartedFetch("transcribing");
 
       const selectedAsUrl = convertFileSrc(selected);
       const fields = await calculateVideoMetadata(selectedAsUrl);
-      const captions = await (
-        await fetch("http://localhost:3123/generate-captions", {
-          method: "POST",
-          body: JSON.stringify({
-            videoPath: selected,
-          }),
-          headers: { "Content-Type": "application/json" },
-        })
-      ).json();
+
+      const captions = await fetch("http://localhost:3123/generate-captions", {
+        method: "POST",
+        body: JSON.stringify({
+          videoPath: selected,
+        }),
+        headers: { "Content-Type": "application/json" },
+      }).catch(() => {
+        return null;
+      });
+
+      if (!captions) {
+        onFailedFetch({
+          code: 404,
+          reason: "Fetch request didn't get a response",
+        });
+
+        return;
+      }
+
+      if (!captions.ok) {
+        onFailedFetch({
+          code: captions.status,
+          reason: captions.statusText,
+        });
+
+        return;
+      }
 
       setVideoConfig({
         videoUrl: selectedAsUrl,
         videoPath: selected,
-        captions: captions,
+        captions: await captions.json(),
         metadata: fields,
       });
 
-      onUsingFetch(undefined);
+      onStartedFetch(undefined);
     }
   }
 
@@ -127,19 +152,42 @@ export default function Tweaks({
             variant="contained"
             color="secondary"
             onClick={async () => {
-              onUsingFetch("rendering");
+              onStartedFetch("rendering");
 
-              await fetch("http://localhost:3123/render-video/", {
-                method: "POST",
-                body: JSON.stringify({
-                  videoUrl: videoConfig.videoPath,
-                  captionAsPages: captionPages,
-                  textStyle: captionStyle,
-                }),
-                headers: { "Content-Type": "application/json" },
+              const render = await fetch(
+                "http://localhost:3123/render-video/",
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    videoUrl: videoConfig.videoPath,
+                    captionAsPages: captionPages,
+                    textStyle: captionStyle,
+                  }),
+                  headers: { "Content-Type": "application/json" },
+                }
+              ).catch(() => {
+                return null;
               });
 
-              onUsingFetch(undefined);
+              if (!render) {
+                onFailedFetch({
+                  code: 404,
+                  reason: "Fetch request didn't get a response",
+                });
+
+                return;
+              }
+
+              if (!render.ok) {
+                onFailedFetch({
+                  code: render.status,
+                  reason: render.statusText,
+                });
+
+                return;
+              }
+
+              onStartedFetch(undefined);
             }}
             disabled={videoConfig.captions === undefined}
           >

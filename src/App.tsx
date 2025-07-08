@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertTitle,
   Box,
   Dialog,
   Divider,
@@ -7,16 +9,14 @@ import {
   Typography,
 } from "@mui/material";
 import Preview from "./tabs/Visuals";
-import Tweaks from "./tabs/Tweaks";
+import Tweaks, { FetchAction, FetchFailedResponse } from "./tabs/Tweaks";
 import { useState } from "react";
 import CaptionStyleProvider from "./context/captionStyle";
 import VideoConfigProvider from "./context/videoConfig";
 
-type CaptionGenerationStage = "transcribing" | "rendering";
-
 export default function App() {
-  const [captionGenerationStage, setCaptionGenerationStage] =
-    useState<CaptionGenerationStage>();
+  const [fetchAction, setFetchAction] = useState<FetchAction>();
+  const [fetchErrors, setFetchErrors] = useState<FetchFailedResponse[]>([]);
 
   return (
     <VideoConfigProvider>
@@ -36,8 +36,8 @@ export default function App() {
               width: "60%",
             }}
           >
-            <Dialog open={captionGenerationStage !== undefined}>
-              <div hidden={captionGenerationStage !== "transcribing"}>
+            <Dialog open={fetchAction !== undefined}>
+              <div hidden={fetchAction !== "transcribing"}>
                 <Paper
                   sx={{
                     display: "flex",
@@ -56,7 +56,7 @@ export default function App() {
                 </Paper>
               </div>
 
-              <div hidden={captionGenerationStage !== "rendering"}>
+              <div hidden={fetchAction !== "rendering"}>
                 <Paper
                   sx={{
                     display: "flex",
@@ -76,7 +76,48 @@ export default function App() {
               </div>
             </Dialog>
 
-            <Tweaks onUsingFetch={setCaptionGenerationStage} />
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 56,
+                right: 0,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "end",
+              }}
+            >
+              {fetchErrors.map((err, index) => {
+                return (
+                  <Alert
+                    key={index}
+                    severity="error"
+                    variant="filled"
+                    onClose={() =>
+                      setFetchErrors((prevErrors) => {
+                        const newError: (FetchFailedResponse | null)[] = [
+                          ...prevErrors,
+                        ];
+
+                        newError[index] = null;
+
+                        return [...newError.filter((v) => v !== null)];
+                      })
+                    }
+                  >
+                    <AlertTitle>{err.code}</AlertTitle>
+                    {err.reason}
+                  </Alert>
+                );
+              })}
+            </Box>
+
+            <Tweaks
+              onStartedFetch={setFetchAction}
+              onFailedFetch={(err) => {
+                setFetchErrors([err, ...fetchErrors]);
+                setFetchAction(undefined);
+              }}
+            />
           </Box>
 
           <Divider orientation="vertical" flexItem />
