@@ -30,7 +30,7 @@ export const TiktokCaptionsComposition = ({
     if (!page) return -1;
 
     return page.tokens.findIndex(
-      (token) => time >= token.fromMs && time < token.toMs,
+      (token) => time >= token.fromMs && time < token.toMs
     );
   }, [page, time]);
 
@@ -43,6 +43,8 @@ export const TiktokCaptionsComposition = ({
           top: config.height / 2,
           transform: `translate(-${(config.width * 0.9) / 2}px)`,
           width: config.width * 0.9,
+          maxWidth: "100%",
+          flexWrap: "wrap",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
