@@ -5,6 +5,8 @@ import {
   BottomNavigationAction,
   Box,
   Button,
+  Card,
+  CardContent,
   Dialog,
   FormControl,
   Grid,
@@ -13,6 +15,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Switch,
   Typography,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -56,6 +59,11 @@ export default function Tweaks() {
   const [fetchErrors, setFetchErrors] = useState<
     { code: number; reason: string }[]
   >([]);
+
+  const [showRenderDialog, setShowRenderDialog] = useState(false);
+  const [renderSettings, setRenderSettings] = useState({
+    outputCaptionsOnly: false,
+  });
 
   function pushFetchError({ code, reason }: { code: number; reason: string }) {
     setFetchErrors((prevErrors) => {
@@ -132,6 +140,47 @@ export default function Tweaks() {
 
       setFetchAction(undefined);
     }
+  }
+
+  async function renderVideo() {
+    setFetchAction("rendering");
+    setShowRenderDialog(false);
+
+    const render = await fetch("http://localhost:3123/render-video/", {
+      method: "POST",
+      body: JSON.stringify({
+        remotionBundle: await path.resolveResource("../remotionBundle"),
+        videoProps: {
+          videoUrl: videoConfig.videoPath,
+          captionsOnly: renderSettings.outputCaptionsOnly,
+          captionAsPages: captionPages,
+          textStyle: captionStyle,
+        },
+      }),
+      headers: { "Content-Type": "application/json" },
+    }).catch(() => {
+      return null;
+    });
+
+    if (!render) {
+      pushFetchError({
+        code: 404,
+        reason: "Fetch request didn't get a response",
+      });
+
+      return;
+    }
+
+    if (!render.ok) {
+      pushFetchError({
+        code: render.status,
+        reason: render.statusText,
+      });
+
+      return;
+    }
+
+    setFetchAction(undefined);
   }
 
   return (
@@ -262,51 +311,34 @@ export default function Tweaks() {
             Select Video
           </Button>
 
+          <Dialog open={showRenderDialog}>
+            <Typography variant="h5">Render Settings</Typography>
+            <Card>
+              <CardContent>
+                <Typography>Captions only (renders much faster)</Typography>
+                <Switch
+                  title="Output captions only"
+                  value={renderSettings.outputCaptionsOnly}
+                  onChange={(event) =>
+                    setRenderSettings((prevOptions) => {
+                      return {
+                        ...prevOptions,
+                        outputCaptionsOnly: event.currentTarget.checked,
+                      };
+                    })
+                  }
+                />
+              </CardContent>
+            </Card>
+
+            <Button onClick={renderVideo}>Confirm</Button>
+          </Dialog>
+
           <Button
             variant="contained"
             color="secondary"
             onClick={async () => {
-              setFetchAction("rendering");
-
-              const render = await fetch(
-                "http://localhost:3123/render-video/",
-                {
-                  method: "POST",
-                  body: JSON.stringify({
-                    remotionBundle: await path.resolveResource(
-                      "../remotionBundle"
-                    ),
-                    videoProps: {
-                      videoUrl: videoConfig.videoPath,
-                      captionAsPages: captionPages,
-                      textStyle: captionStyle,
-                    },
-                  }),
-                  headers: { "Content-Type": "application/json" },
-                }
-              ).catch(() => {
-                return null;
-              });
-
-              if (!render) {
-                pushFetchError({
-                  code: 404,
-                  reason: "Fetch request didn't get a response",
-                });
-
-                return;
-              }
-
-              if (!render.ok) {
-                pushFetchError({
-                  code: render.status,
-                  reason: render.statusText,
-                });
-
-                return;
-              }
-
-              setFetchAction(undefined);
+              setShowRenderDialog(true);
             }}
             disabled={videoConfig.captions === undefined}
           >

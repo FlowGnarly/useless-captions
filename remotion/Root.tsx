@@ -17,12 +17,12 @@ export const RemotionRoot: React.FC = () => {
         id="TiktokCaptions"
         component={TiktokCaptionsComposition}
         durationInFrames={60}
-        defaultProps={{ videoUrl: "", captionAsPages: [] }}
+        defaultProps={{ videoUrl: "", captionsOnly: false, captionAsPages: [] }}
         fps={60}
         width={1080}
         height={1920}
         calculateMetadata={({ props }) => {
-          return calculateVideoMetadata(props.mediaParseUrl ?? props.videoUrl);
+          return calculateVideoMetadata(props.videoUrl);
         }}
       />
     </>

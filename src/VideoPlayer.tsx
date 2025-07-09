@@ -37,6 +37,7 @@ export default function VideoPlayer() {
       component={TiktokCaptionsComposition}
       inputProps={{
         videoUrl: config.videoUrl,
+        captionsOnly: false,
         captionAsPages: captionPages,
         textStyle: captionStyle,
       }}

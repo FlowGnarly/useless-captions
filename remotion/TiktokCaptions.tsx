@@ -1,18 +1,18 @@
 import { SxProps, Theme, Typography } from "@mui/material";
 import { TikTokPage } from "@remotion/captions";
-import { type ParseMediaSrc } from "@remotion/media-parser";
 import { useMemo } from "react";
 import { OffthreadVideo, useCurrentFrame, useVideoConfig } from "remotion";
 
 export type TiktokCaptionsCompositionProps = {
   videoUrl: string;
-  mediaParseUrl?: ParseMediaSrc;
+  captionsOnly: boolean;
   captionAsPages: TikTokPage[];
   textStyle?: SxProps<Theme>;
 };
 
 export const TiktokCaptionsComposition = ({
   videoUrl,
+  captionsOnly,
   captionAsPages,
   textStyle,
 }: TiktokCaptionsCompositionProps) => {
@@ -82,10 +82,20 @@ export const TiktokCaptionsComposition = ({
           })}
       </div>
 
-      <OffthreadVideo
-        src={videoUrl}
-        style={{ width: "100%", height: "100%" }}
-      />
+      {captionsOnly ? (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            backgroundColor: "black",
+          }}
+        />
+      ) : (
+        <OffthreadVideo
+          src={videoUrl}
+          style={{ width: "100%", height: "100%" }}
+        />
+      )}
     </div>
   );
 };
