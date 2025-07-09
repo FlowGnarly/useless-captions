@@ -22,21 +22,23 @@ export const TiktokCaptionsComposition = ({
     return (frame / config.fps) * 1000;
   }, [frame, config]);
 
-  const page = useMemo(() => {
-    return [...captionAsPages].reverse().find((page) => time >= page.startMs);
+  const pageIndex = useMemo(() => {
+    let pageIndex = -1;
+
+    for (let i = captionAsPages.length - 1; i >= 0; i--) {
+      if (time >= captionAsPages[i].startMs) {
+        pageIndex = i;
+        break;
+      }
+    }
+
+    return pageIndex;
   }, [captionAsPages, time]);
-
-  const highlightedTokenIndex = useMemo(() => {
-    if (!page) return -1;
-
-    return page.tokens.findIndex(
-      (token) => time >= token.fromMs && time < token.toMs
-    );
-  }, [page, time]);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <div
+        key={pageIndex}
         style={{
           position: "absolute",
           left: config.width / 2,
@@ -50,14 +52,14 @@ export const TiktokCaptionsComposition = ({
           justifyContent: "center",
         }}
       >
-        {page &&
-          page.tokens.map((token, index) => {
+        {pageIndex > -1 &&
+          captionAsPages[pageIndex].tokens.map((token, index) => {
+            const higlight = token.fromMs <= time && token.toMs > time;
+
             return (
               <Typography
                 key={index}
-                data-highlight={
-                  index === highlightedTokenIndex ? "" : undefined
-                }
+                data-highlight={higlight ? "" : undefined}
                 component="span"
                 sx={{
                   color: "white",
@@ -67,7 +69,6 @@ export const TiktokCaptionsComposition = ({
                   "&[data-highlight]": {
                     backgroundColor: "red",
                   },
-                  transition: "all 80ms ease-out",
                   borderRadius: 4,
                   fontFamily: "impact",
                   // eslint-disable-next-line @remotion/slow-css-property
