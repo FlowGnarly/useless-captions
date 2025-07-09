@@ -2,7 +2,6 @@ import {
   Card,
   CardContent,
   Checkbox,
-  Input,
   Paper,
   Slider,
   Typography,
