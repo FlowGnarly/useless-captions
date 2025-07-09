@@ -31,24 +31,12 @@ import calculateVideoMetadata from "../../../remotion/calcMetadata";
 import { useVideoConfigCtx } from "../../context/videoConfig";
 import useCaptionPages from "../../useCaptionPages";
 import CaptionEditor from "./CaptionEditor";
-import { path } from "@tauri-apps/api";
-
-const whisperModels = [
-  "tiny",
-  "tiny.en",
-  "base",
-  "base.en",
-  "small",
-  "small.en",
-  "medium",
-  "medium.en",
-  "large-v1",
-  "large-v2",
-  "large-v3",
-  "large-v3-turbo",
-];
-
-export type WhisperModel = (typeof whisperModels)[number];
+import {
+  availableWhisperModels,
+  generateCaptions,
+  renderVideo as renderVideoApi,
+  WhisperModel,
+} from "../../api";
 
 export default function Tweaks() {
   const [tab, setTab] = useState(0);
@@ -102,25 +90,10 @@ export default function Tweaks() {
       const selectedAsUrl = convertFileSrc(selected);
       const fields = await calculateVideoMetadata(selectedAsUrl);
 
-      const captions = await fetch("http://localhost:3123/generate-captions", {
-        method: "POST",
-        body: JSON.stringify({
-          videoPath: selected,
-          whisperModel,
-        }),
-        headers: { "Content-Type": "application/json" },
-      }).catch(() => {
-        return null;
+      const captions = await generateCaptions({
+        videoPath: selected,
+        whisperModel,
       });
-
-      if (!captions) {
-        pushFetchError({
-          code: 404,
-          reason: "Fetch request didn't get a response",
-        });
-
-        return;
-      }
 
       if (!captions.ok) {
         pushFetchError({
@@ -134,7 +107,7 @@ export default function Tweaks() {
       setVideoConfig({
         videoUrl: selectedAsUrl,
         videoPath: selected,
-        captions: await captions.json(),
+        captions: captions.captions,
         metadata: fields,
       });
 
@@ -146,30 +119,12 @@ export default function Tweaks() {
     setFetchAction("rendering");
     setShowRenderDialog(false);
 
-    const render = await fetch("http://localhost:3123/render-video/", {
-      method: "POST",
-      body: JSON.stringify({
-        remotionBundle: await path.resolveResource("../remotionBundle"),
-        videoProps: {
-          videoUrl: videoConfig.videoPath,
-          captionsOnly: renderSettings.outputCaptionsOnly,
-          captionAsPages: captionPages,
-          textStyle: captionStyle,
-        },
-      }),
-      headers: { "Content-Type": "application/json" },
-    }).catch(() => {
-      return null;
+    const render = await renderVideoApi({
+      videoUrl: videoConfig.videoPath!,
+      captionsOnly: renderSettings.outputCaptionsOnly,
+      captionAsPages: captionPages!,
+      textStyle: captionStyle,
     });
-
-    if (!render) {
-      pushFetchError({
-        code: 404,
-        reason: "Fetch request didn't get a response",
-      });
-
-      return;
-    }
 
     if (!render.ok) {
       pushFetchError({
@@ -292,7 +247,7 @@ export default function Tweaks() {
               label="Age"
               onChange={(event) => setWhisperModel(event.target.value)}
             >
-              {whisperModels.map((model) => {
+              {availableWhisperModels.map((model) => {
                 return (
                   <MenuItem key={model} value={model}>
                     {model}
