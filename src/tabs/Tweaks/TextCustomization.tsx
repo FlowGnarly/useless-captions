@@ -2,6 +2,7 @@ import {
   Card,
   CardContent,
   Checkbox,
+  Input,
   Paper,
   Slider,
   Typography,
@@ -18,6 +19,7 @@ type StyleState = {
   highlightColor: HsvaColor;
   textOutline: boolean;
   textGlow: boolean;
+  textGlowStrength: number;
   y: number;
   fontSize: number;
 };
@@ -27,6 +29,7 @@ type StyleDispatchAction =
   | { type: "SET_HIGHLIGHT_COLOR"; payload: HsvaColor }
   | { type: "SET_TEXT_OUTLINE"; payload: boolean }
   | { type: "SET_TEXT_GLOW"; payload: boolean }
+  | { type: "SET_TEXT_GLOW_STRENGTH"; payload: number }
   | { type: "SET_TEXT_Y"; payload: number }
   | { type: "SET_FONT_SIZE"; payload: number };
 
@@ -43,6 +46,11 @@ function styleReducer(
       return { ...state, textOutline: action.payload };
     case "SET_TEXT_GLOW":
       return { ...state, textGlow: action.payload };
+    case "SET_TEXT_GLOW_STRENGTH":
+      return {
+        ...state,
+        textGlowStrength: action.payload,
+      };
     case "SET_TEXT_Y":
       return { ...state, y: action.payload };
     case "SET_FONT_SIZE":
@@ -60,6 +68,7 @@ export default function TextCustomization() {
     highlightColor: { h: 214, s: 43, v: 90, a: 1 },
     textOutline: true,
     textGlow: true,
+    textGlowStrength: 50,
     y: 0,
     fontSize: 4,
   });
@@ -68,9 +77,11 @@ export default function TextCustomization() {
     const textShadow: (string | undefined)[] = [
       style.textOutline ? "-1px -1px 5px black" : undefined,
       style.textGlow
-        ? `0px 0px 50px ${hsvaToHex(
+        ? `0px 0px ${style.textGlowStrength}px ${hsvaToHex(
             style.color
-          )},0px 0px 150px white,0px 0px 80px ${hsvaToHex(style.color)}`
+          )},0px 0px ${style.textGlowStrength * 2}px ${hsvaToHex(
+            style.color
+          )},0px 0px ${style.textGlowStrength * 3}px ${hsvaToHex(style.color)}`
         : undefined,
     ];
 
@@ -240,6 +251,21 @@ export default function TextCustomization() {
                   type: "SET_TEXT_GLOW",
                   payload: event.currentTarget.checked,
                 });
+              }}
+            />
+            <Slider
+              title="Font Size"
+              value={style.textGlowStrength}
+              onChange={(_, value) =>
+                dispatchStyle({
+                  type: "SET_TEXT_GLOW_STRENGTH",
+                  payload: value,
+                })
+              }
+              min={10}
+              max={100}
+              sx={{
+                width: "100%",
               }}
             />
           </CardContent>
