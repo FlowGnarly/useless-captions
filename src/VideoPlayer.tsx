@@ -8,7 +8,10 @@ import useCaptionPages from "./useCaptionPages";
 export default function VideoPlayer() {
   const { config } = useVideoConfigCtx();
 
-  if (config.videoUrl === undefined) {
+  const { style: captionStyle } = useCaptionStyleCtx();
+  const captionPages = useCaptionPages(config.captions);
+
+  if (config.videoUrl === undefined || captionPages === undefined) {
     return (
       <Skeleton
         variant="rectangular"
@@ -20,9 +23,6 @@ export default function VideoPlayer() {
       />
     );
   }
-
-  const { style: captionStyle } = useCaptionStyleCtx();
-  const captionPages = useCaptionPages(config.captions);
 
   return (
     <Player
