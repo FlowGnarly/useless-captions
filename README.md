@@ -34,10 +34,8 @@ if the server failed to download chrome-headless-shell, copy the download link f
 
 ## screenshots
 
-![Generating captions after selecting video](/screenshots/generation.png)
+![Editing generated captions](/screenshots/EditingCaptions.png)
 
-![Editing the generated captions](/screenshots/edit-captions.png)
+![Customizing the text style](/screenshots/CustomizingCaptions.png)
 
-![Customizing the text style](/screenshots/customize-text.png)
-
-![Rendering the video](/screenshots/render.png)
+![Rendering the video](/screenshots/Rendering.png)
