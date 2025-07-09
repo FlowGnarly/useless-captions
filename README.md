@@ -10,7 +10,8 @@ you're gonna have to run the server in your terminal before you open the softwar
 
 ```shell
 # clone and cd into the project
-git clone https://github.com/flowgnarly/useless-captions
+# replace 1.x.0 with the version you've downloaded from https://github.com/FlowGnarly/useless-captions/releases
+git clone --branch app-v1.x.0 https://github.com/flowgnarly/useless-captions
 cd useless-captions
 
 # cd into the server, install server dependencies
