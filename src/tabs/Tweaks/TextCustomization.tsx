@@ -2,16 +2,22 @@ import {
   Card,
   CardContent,
   Checkbox,
+  FormControl,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
+  Skeleton,
   Slider,
   Typography,
 } from "@mui/material";
-import { Box } from "@mui/system";
+import { Box, Grid } from "@mui/system";
 import { HsvaColor, hsvaToHex } from "@uiw/color-convert";
 import ShadeSlider from "@uiw/react-color-shade-slider";
 import Wheel from "@uiw/react-color-wheel";
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useCaptionStyleCtx } from "../../context/captionStyle";
+import { invoke } from "@tauri-apps/api/core";
 
 type StyleState = {
   color: HsvaColor;
@@ -19,9 +25,12 @@ type StyleState = {
   textOutline: boolean;
   textGlow: boolean;
   textGlowStrength: number;
+  fontIndex: number;
   y: number;
   fontSize: number;
 };
+
+type Font = { family: string; style: string };
 
 type StyleDispatchAction =
   | { type: "SET_TEXT_COLOR"; payload: HsvaColor }
@@ -29,6 +38,7 @@ type StyleDispatchAction =
   | { type: "SET_TEXT_OUTLINE"; payload: boolean }
   | { type: "SET_TEXT_GLOW"; payload: boolean }
   | { type: "SET_TEXT_GLOW_STRENGTH"; payload: number }
+  | { type: "SET_FONT_INDEX"; payload: number }
   | { type: "SET_TEXT_Y"; payload: number }
   | { type: "SET_FONT_SIZE"; payload: number };
 
@@ -50,6 +60,11 @@ function styleReducer(
         ...state,
         textGlowStrength: action.payload,
       };
+    case "SET_FONT_INDEX":
+      return {
+        ...state,
+        fontIndex: action.payload,
+      };
     case "SET_TEXT_Y":
       return { ...state, y: action.payload };
     case "SET_FONT_SIZE":
@@ -68,11 +83,21 @@ export default function TextCustomization() {
     textOutline: true,
     textGlow: true,
     textGlowStrength: 50,
+    fontIndex: 0,
     y: 0,
     fontSize: 4,
   });
 
+  const [installedFonts, setInstalledFonts] = useState<Font[]>();
+
   useEffect(() => {
+    const font: Font = installedFonts
+      ? installedFonts[style.fontIndex]
+      : {
+          family: "",
+          style: "",
+        };
+
     const textShadow: (string | undefined)[] = [
       style.textOutline ? "-1px -1px 5px black" : undefined,
       style.textGlow
@@ -90,10 +115,16 @@ export default function TextCustomization() {
       "&[data-highlight]": {
         backgroundColor: hsvaToHex(style.highlightColor),
       },
+      font: `${font.style} ${style.fontSize}em ${font.family}`,
       transform: `translate(0, ${style.y}px)`,
-      fontSize: `${style.fontSize}em`,
     });
   }, [style]);
+
+  useEffect(() => {
+    invoke("list_installed_fonts").then((value) => {
+      setInstalledFonts(value as Font[]);
+    });
+  }, []);
 
   return (
     <Box
@@ -104,172 +135,162 @@ export default function TextCustomization() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        overflowY: "scroll",
+        overflowY: "auto",
       }}
     >
-      <Paper
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "center",
-          width: "50%",
-        }}
-      >
-        <Card>
-          <CardContent>
-            <Typography variant="h5">Primary Color</Typography>
-            <Wheel
-              color={style.color}
-              onChange={(color) => {
-                dispatchStyle({
-                  type: "SET_TEXT_COLOR",
-                  payload: color.hsva,
-                });
-              }}
-            />
-            <ShadeSlider
-              hsva={style.color}
-              onChange={(newShade) => {
-                dispatchStyle({
-                  type: "SET_TEXT_COLOR",
-                  payload: { ...style.color, ...newShade },
-                });
-              }}
-            />
-          </CardContent>
-        </Card>
+      <Grid container spacing={5} sx={{ width: "90%", height: "90%" }}>
+        <Box>
+          <Typography variant="h5">Primary Color</Typography>
+          <Wheel
+            color={style.color}
+            onChange={(color) => {
+              dispatchStyle({
+                type: "SET_TEXT_COLOR",
+                payload: color.hsva,
+              });
+            }}
+          />
+          <ShadeSlider
+            hsva={style.color}
+            onChange={(newShade) => {
+              dispatchStyle({
+                type: "SET_TEXT_COLOR",
+                payload: { ...style.color, ...newShade },
+              });
+            }}
+          />
+        </Box>
 
-        <Card>
-          <CardContent>
-            <Typography variant="h5">Highlight Color</Typography>
-            <Wheel
-              color={style.highlightColor}
-              onChange={(color) => {
-                dispatchStyle({
-                  type: "SET_HIGHLIGHT_COLOR",
-                  payload: color.hsva,
-                });
-              }}
-            />
-            <ShadeSlider
-              hsva={style.highlightColor}
-              onChange={(newShade) => {
-                dispatchStyle({
-                  type: "SET_HIGHLIGHT_COLOR",
-                  payload: { ...style.highlightColor, ...newShade },
-                });
-              }}
-            />
-          </CardContent>
-        </Card>
-      </Paper>
+        <Box>
+          <Typography variant="h5">Highlight Color</Typography>
+          <Wheel
+            color={style.highlightColor}
+            onChange={(color) => {
+              dispatchStyle({
+                type: "SET_HIGHLIGHT_COLOR",
+                payload: color.hsva,
+              });
+            }}
+          />
+          <ShadeSlider
+            hsva={style.highlightColor}
+            onChange={(newShade) => {
+              dispatchStyle({
+                type: "SET_HIGHLIGHT_COLOR",
+                payload: { ...style.highlightColor, ...newShade },
+              });
+            }}
+          />
+        </Box>
 
-      <Paper
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "center",
-          width: "50%",
-        }}
-      >
-        <Card sx={{ width: "100%" }}>
-          <CardContent>
-            <Typography variant="h5">Y Position</Typography>
-            <Slider
-              title="Y Position"
-              value={style.y}
-              onChange={(_, value) => {
-                dispatchStyle({
-                  type: "SET_TEXT_Y",
-                  payload: value,
-                });
-              }}
-              min={-1000}
-              max={1000}
-              sx={{
-                width: "100%",
-              }}
-            />
-          </CardContent>
-        </Card>
+        <Box sx={{ width: "50%" }}>
+          <Typography variant="h5">Y Position</Typography>
+          <Slider
+            title="Y Position"
+            value={style.y}
+            onChange={(_, value) => {
+              dispatchStyle({
+                type: "SET_TEXT_Y",
+                payload: value,
+              });
+            }}
+            min={-1000}
+            max={1000}
+            sx={{
+              width: "100%",
+            }}
+          />
+        </Box>
 
-        <Card sx={{ width: "100%" }}>
-          <CardContent>
-            <Typography variant="h5">Font Size</Typography>
-            <Slider
-              title="Font Size"
-              value={style.fontSize}
-              onChange={(_, value) => {
-                dispatchStyle({
-                  type: "SET_FONT_SIZE",
-                  payload: value,
-                });
-              }}
-              min={2}
-              max={12}
-              sx={{
-                width: "100%",
-              }}
-            />
-          </CardContent>
-        </Card>
-      </Paper>
+        <Box sx={{ width: "50%" }}>
+          <Typography variant="h5">Font Size</Typography>
+          <Slider
+            title="Font Size"
+            value={style.fontSize}
+            onChange={(_, value) => {
+              dispatchStyle({
+                type: "SET_FONT_SIZE",
+                payload: value,
+              });
+            }}
+            min={2}
+            max={12}
+            sx={{
+              width: "100%",
+            }}
+          />
+        </Box>
 
-      <Paper
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "center",
-          width: "50%",
-        }}
-      >
-        <Card sx={{ width: "100%" }}>
-          <CardContent>
-            <Typography variant="h5">Outline</Typography>
-            <Checkbox
-              title="Outline"
-              checked={style.textOutline}
-              onChange={(event) => {
-                dispatchStyle({
-                  type: "SET_TEXT_OUTLINE",
-                  payload: event.currentTarget.checked,
-                });
-              }}
-            />
-          </CardContent>
-        </Card>
+        <Box>
+          {installedFonts ? (
+            <FormControl sx={{ width: "18rem" }}>
+              <InputLabel>Font</InputLabel>
+              <Select
+                value={style.fontIndex}
+                onChange={(event) =>
+                  dispatchStyle({
+                    type: "SET_FONT_INDEX",
+                    payload: event.target.value,
+                  })
+                }
+              >
+                {installedFonts.map((font, index) => {
+                  return (
+                    <MenuItem key={index} value={index}>
+                      {`${font.family}, ${font.style}`}
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+          ) : (
+            <Skeleton variant="rectangular" width={"18rem"} height={"50px"} />
+          )}
+        </Box>
 
-        <Card sx={{ width: "100%" }}>
-          <CardContent>
-            <Typography variant="h5">Glow</Typography>
-            <Checkbox
-              title="Glow"
-              checked={style.textGlow}
-              onChange={(event) => {
-                dispatchStyle({
-                  type: "SET_TEXT_GLOW",
-                  payload: event.currentTarget.checked,
-                });
-              }}
-            />
-            <Slider
-              title="Font Size"
-              value={style.textGlowStrength}
-              onChange={(_, value) =>
-                dispatchStyle({
-                  type: "SET_TEXT_GLOW_STRENGTH",
-                  payload: value,
-                })
-              }
-              min={10}
-              max={100}
-              sx={{
-                width: "100%",
-              }}
-            />
-          </CardContent>
-        </Card>
-      </Paper>
+        <Box sx={{ width: "50%" }}>
+          <Typography variant="h5">Glow</Typography>
+          <Checkbox
+            title="Glow"
+            checked={style.textGlow}
+            onChange={(event) => {
+              dispatchStyle({
+                type: "SET_TEXT_GLOW",
+                payload: event.currentTarget.checked,
+              });
+            }}
+          />
+          <Slider
+            title="Font Size"
+            value={style.textGlowStrength}
+            onChange={(_, value) =>
+              dispatchStyle({
+                type: "SET_TEXT_GLOW_STRENGTH",
+                payload: value,
+              })
+            }
+            min={10}
+            max={100}
+            sx={{
+              width: "100%",
+            }}
+          />
+        </Box>
+
+        <Box>
+          <Typography variant="h5">Outline</Typography>
+          <Checkbox
+            title="Outline"
+            checked={style.textOutline}
+            onChange={(event) => {
+              dispatchStyle({
+                type: "SET_TEXT_OUTLINE",
+                payload: event.currentTarget.checked,
+              });
+            }}
+          />
+        </Box>
+      </Grid>
     </Box>
   );
 }
