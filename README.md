@@ -18,7 +18,7 @@ cd useless-captions
 cd server
 bun i
 
-# run the server (first time will take a while because it has to download the openai-whisper model)
+# run the server
 bun index.ts
 ```
 
