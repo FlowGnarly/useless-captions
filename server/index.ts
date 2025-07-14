@@ -92,11 +92,14 @@ app.post("/render-video", async (req, res) => {
   await renderMedia({
     serveUrl: config.remotionBundle,
     composition,
-    codec: "h264",
     colorSpace: "bt709",
-    imageFormat: "png",
     outputLocation: `out/video.mp4`,
     inputProps: config.videoProps,
+
+    imageFormat: "png",
+    pixelFormat: config.videoProps.captionsOnly ? "yuva444p10le" : undefined,
+    codec: config.videoProps.captionsOnly ? "prores" : "h264",
+    proResProfile: config.videoProps.captionsOnly ? "4444" : undefined,
 
     videoBitrate: "2M",
     encodingMaxRate: "2M",
